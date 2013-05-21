@@ -188,7 +188,7 @@ fi
 #
 CINDER_SERVICE=$(get_id \
 keystone service-create --name=cinder \
-                        --type=cinder \
+                        --type=volume \
                         --description="OpenStack Volume Service")
 if [[ -z "$DISABLE_ENDPOINTS" ]]; then
     keystone endpoint-create --region RegionOne --service-id $CINDER_SERVICE \
