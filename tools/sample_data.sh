@@ -31,7 +31,7 @@
 #
 # Tenant               User      Roles
 # -------------------------------------------------------
-# demo                 admin     admin
+# default              admin     admin
 # service              glance    admin
 # service              nova      admin
 # service              ec2       admin
@@ -46,7 +46,9 @@ ADMIN_PASSWORD=${ADMIN_PASSWORD:-secrete}
 NOVA_PASSWORD=${NOVA_PASSWORD:-${SERVICE_PASSWORD:-nova}}
 GLANCE_PASSWORD=${GLANCE_PASSWORD:-${SERVICE_PASSWORD:-glance}}
 EC2_PASSWORD=${EC2_PASSWORD:-${SERVICE_PASSWORD:-ec2}}
-SWIFT_PASSWORD=${SWIFT_PASSWORD:-${SERVICE_PASSWORD:-swiftpass}}
+SWIFT_PASSWORD=${SWIFT_PASSWORD:-${SERVICE_PASSWORD:-swift} # Changed from 'swiftpass' to just 'swift'
+QUANTUM_PASSWORD=${QUANTUM_PASSWORD:-${SERVICE_PASSWORD:-quantum}
+CINDER_PASSWORD=${CINDER_PASSWORD:-${SERVICE_PASSWORD:-cinder}
 
 CONTROLLER_PUBLIC_ADDRESS=${CONTROLLER_PUBLIC_ADDRESS:-localhost}
 CONTROLLER_ADMIN_ADDRESS=${CONTROLLER_ADMIN_ADDRESS:-localhost}
@@ -87,7 +89,7 @@ function get_id () {
 #
 # Default tenant
 #
-DEMO_TENANT=$(get_id keystone tenant-create --name=demo \
+DEFAULT_TENANT=$(get_id keystone tenant-create --name=default \
                                             --description "Default Tenant")
 
 ADMIN_USER=$(get_id keystone user-create --name=admin \
@@ -97,7 +99,7 @@ ADMIN_ROLE=$(get_id keystone role-create --name=admin)
 
 keystone user-role-add --user-id $ADMIN_USER \
                        --role-id $ADMIN_ROLE \
-                       --tenant-id $DEMO_TENANT
+                       --tenant-id $DEFAULT_TENANT
 
 #
 # Service tenant
@@ -166,13 +168,14 @@ fi
 
 #
 # Volume service
+# Use Cinder instead of Nova Volume
 #
-VOLUME_SERVICE=$(get_id \
-keystone service-create --name=volume \
-                        --type=volume \
-                        --description="Nova Volume Service")
+CINDER_SERVICE=$(get_id \
+keystone service-create --name=cinder \
+                        --type=cinder \
+                        --description="OpenStack Volume Service")
 if [[ -z "$DISABLE_ENDPOINTS" ]]; then
-    keystone endpoint-create --region RegionOne --service-id $VOLUME_SERVICE \
+    keystone endpoint-create --region RegionOne --service-id $CINDER_SERVICE \
         --publicurl "http://$CONTROLLER_PUBLIC_ADDRESS:8776/v1/\$(tenant_id)s" \
         --adminurl "http://$CONTROLLER_ADMIN_ADDRESS:8776/v1/\$(tenant_id)s" \
         --internalurl "http://$CONTROLLER_INTERNAL_ADDRESS:8776/v1/\$(tenant_id)s"
@@ -218,6 +221,20 @@ if [[ -z "$DISABLE_ENDPOINTS" ]]; then
         --publicurl   "http://$CONTROLLER_PUBLIC_ADDRESS:8888/v1/AUTH_\$(tenant_id)s" \
         --adminurl    "http://$CONTROLLER_ADMIN_ADDRESS:8888/v1" \
         --internalurl "http://$CONTROLLER_INTERNAL_ADDRESS:8888/v1/AUTH_\$(tenant_id)s"
+fi
+
+#
+# Quantum service
+#
+QUANTUM_SERVICE=$(get_id \
+keystone service-create --name=quantum \
+                        --type="network" \
+                        --description="OpenStack Networking Service")
+if [[ -z "$DISABLE_ENDPOINTS" ]]; then
+    keystone endpoint-create --region RegionOne --service-id $QUANTUM_SERVICE \
+        --publicurl   "http://$CONTROLLER_PUBLIC_ADDRESS:9696/" \
+        --adminurl    "http://$CONTROLLER_ADMIN_ADDRESS:9696/" \
+        --internalurl "http://$CONTROLLER_INTERNAL_ADDRESS:9696/"
 fi
 
 # create ec2 creds and parse the secret and access key returned
