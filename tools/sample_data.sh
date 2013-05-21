@@ -138,6 +138,22 @@ keystone user-role-add --user-id $SWIFT_USER \
                        --role-id $ADMIN_ROLE \
                        --tenant-id $SERVICE_TENANT
 
+QUANTUM_USER=$(get_id keystone user-create --name=quantum \
+                                         --pass="${QUANTUM_PASSWORD}" \
+                                         --tenant-id $SERVICE_TENANT)
+
+keystone user-role-add --user-id $QUANTUM_USER \
+                       --role-id $ADMIN_ROLE \
+                       --tenant-id $SERVICE_TENANT
+
+CINDER_USER=$(get_id keystone user-create --name=cinder \
+                                         --pass="${CINDER_PASSWORD}" \
+                                         --tenant-id $SERVICE_TENANT)
+
+keystone user-role-add --user-id $CINDER_USER \
+                       --role-id $ADMIN_ROLE \
+                       --tenant-id $SERVICE_TENANT
+
 #
 # Keystone service
 #
